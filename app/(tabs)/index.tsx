@@ -1,16 +1,24 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 
-import { CameraView, useCameraPermissions } from "expo-camera";
+import {
+  CameraCapturedPicture,
+  CameraView,
+  useCameraPermissions,
+} from "expo-camera";
 
 import { Image } from "expo-image";
 import { StyleSheet, View } from "react-native";
 
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import { CaptureButton, CloseButton } from "@/components/ui/camera";
 import { FontAwesome } from "@expo/vector-icons";
 export default function HomeScreen() {
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const cameraRef = useRef<CameraView>(null);
+  const [capturedPhoto, setCapturedPhoto] =
+    useState<CameraCapturedPicture | null>(null);
 
   const handleCameraPress = async () => {
     if (cameraPermission?.granted) {
@@ -22,12 +30,22 @@ export default function HomeScreen() {
       }
     }
   };
+  const handleCaptureButtonPress = async () => {
+    console.log(cameraRef);
+
+    if (cameraRef.current) {
+      const photo = await cameraRef.current.takePictureAsync();
+      setCapturedPhoto(photo);
+      setIsCameraOpen(false); // Optional: Close after capture
+    }
+  };
 
   if (isCameraOpen) {
     return (
       <View style={styles.container}>
-        <CameraView style={styles.camera} facing="back">
-          <View style={styles.buttonContainer}></View>
+        <CameraView style={styles.camera} facing="back" ref={cameraRef}>
+            <CloseButton onPress={() => setIsCameraOpen(false)} />
+            <CaptureButton onPress={handleCaptureButtonPress} />
         </CameraView>
       </View>
     );
@@ -93,5 +111,17 @@ const styles = StyleSheet.create({
     flex: 1,
     width: "100%",
     height: "100%",
+  },
+  cameraOverlay: {
+    position: "absolute",
+    top: 40,
+    right: 20,
+    zIndex: 10,
+  },
+  captureButtonContainer: {
+    position: "absolute",
+    bottom: 40,
+    alignSelf: "center",
+    zIndex: 10,
   },
 });
